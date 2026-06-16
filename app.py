@@ -297,6 +297,7 @@ st.markdown("""
 .stSelectbox > div > div {
   border-radius: 8px !important;
   border-color: var(--border) !important;
+  color: var(--text) !important;
 }
 .stTextInput > div > div > input:focus,
 .stSelectbox > div > div:focus-within {
@@ -304,6 +305,8 @@ st.markdown("""
   box-shadow: 0 0 0 2px rgba(200,146,42,0.15) !important;
 }
 [data-testid="stMetricValue"] { font-family: 'JetBrains Mono', monospace !important; }
+.stMarkdown, .stText, p, span { color: var(--text) !important; }
+.stApp h1, .stApp h2, .stApp h3, .stApp h4 { color: var(--navy) !important; }
 </style>
 """, unsafe_allow_html=True)
 
