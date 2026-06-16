@@ -360,7 +360,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # ===== FILTER =====
 st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
-f1, f2, f3, f4 = st.columns([1, 1, 1.5, 0])
+f1, f2, f3 = st.columns([1, 1, 1.5])
 with f1:
     city = st.selectbox("縣市", ["全部"] + CITIES, label_visibility="collapsed")
 with f2:
@@ -371,8 +371,6 @@ with f3:
         placeholder="輸入公司名稱、主要產品或負責人姓名...",
         label_visibility="collapsed"
     )
-with f4:
-    st.markdown("<div></div>", unsafe_allow_html=True)  # spacer
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ===== FILTER DATA =====
