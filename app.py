@@ -9,23 +9,34 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "labor_violations.cs
 # ===== DATA =====
 @st.cache_data(ttl=3600)
 def load_data():
-    col_names = [
-        "編號", "縣市／單位別", "公告日期",
-        "事業單位名稱(負責人)\n自然人姓名",
-        "處分日期", "處分字號",
-        "違反法規條款", "法條敘述", "罰鍰金額", "備註"
-    ]
-    df = pd.read_csv(DATA_PATH, encoding="utf-8-sig", skiprows=2,
-                     header=None, names=col_names, dtype=str)
+    import csv as csvlib
+    rows = []
+    with open(DATA_PATH, encoding='utf-8-sig') as f:
+        reader = csvlib.reader(f)
+        next(reader)  # 跳過「違反雇主清冊」標題
+        next(reader)  # 跳過欄位名稱列（可能有換行問題）
+        for row in reader:
+            if len(row) >= 9:
+                rows.append({
+                    "縣市": row[1].strip(),
+                    "縣市完整": row[1].strip(),
+                    "公告日期": row[2].strip(),
+                    "事業單位": row[3].strip(),
+                    "處分日期": row[4].strip(),
+                    "處分字號": row[5].strip(),
+                    "違反法規": row[6].strip(),
+                    "法條敘述": row[7].strip(),
+                    "罰鍰金額": row[8].strip(),
+                })
+    df = pd.DataFrame(rows)
     df = df.fillna("")
-    df["縣市"] = df["縣市／單位別"].str.split("／").str[0].str.strip()
     return df
 
 try:
     df = load_data()
     total = len(df)
-    CITIES = sorted([c for c in df["縣市"].unique() if c and "科學園區" not in c and "加工出口區" not in c and "產業園區" not in c])
-    LAW_ARTICLES = sorted([a for a in df["違反法規條款"].unique() if a and "第" in a])
+    CITIES = sorted(df["縣市"].unique().tolist())
+    LAW_ARTICLES = sorted(df["違反法規"].unique().tolist())
 except Exception as e:
     st.error(f"無法讀取資料：{e}")
     st.stop()
@@ -50,9 +61,9 @@ filtered = df.copy()
 if city != "全部":
     filtered = filtered[filtered["縣市"] == city]
 if article != "全部":
-    filtered = filtered[filtered["違反法規條款"] == article]
+    filtered = filtered[filtered["違反法規"] == article]
 if keyword:
-    filtered = filtered[filtered["事業單位名稱(負責人)\n自然人姓名"].str.contains(keyword, na=False, regex=False)]
+    filtered = filtered[filtered["事業單位"].str.contains(keyword, na=False, regex=False)]
 
 st.markdown(f"**查到 {len(filtered):,} 筆結果，共 {total:,} 筆資料**")
 
@@ -61,14 +72,14 @@ pages = list(range(0, len(filtered), PAGE_SIZE))
 
 def render_page(df_page):
     for _, row in df_page.iterrows():
-        co   = row["事業單位名稱(負責人)\n自然人姓名"].strip()
+        co   = row["事業單位"].strip()
         city = row["縣市"].strip()
         date = row["處分日期"].strip()
-        law  = row["違反法規條款"].strip()
+        law  = row["違反法規"].strip()
         desc = row["法條敘述"].strip().replace(";", "；")
         fine = row["罰鍰金額"].strip()
         ann  = row["公告日期"].strip()
-        unit = row["縣市／單位別"].strip()
+        unit = row["縣市完整"].strip()
 
         with st.container():
             cl, cr = st.columns([4, 1])
