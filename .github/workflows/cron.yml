@@ -1,0 +1,32 @@
+name: 每日更新勞動裁罰資料
+
+on:
+  schedule:
+    # 台北時間每天 04:00 執行 (UTC 20:00)
+    - cron: '0 20 * * *'
+  workflow_dispatch:  # 可以手動觸發
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安裝 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安裝依賴
+        run: pip install pandas
+
+      - name: 執行爬蟲更新 CSV
+        run: python spider.py
+
+      - name: 提交更新後的 CSV
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/labor_violations.csv
+          git diff --staged --quiet || git commit -m "自動更新裁罰資料 $(date +'%Y-%m-%d %H:%M')"
+          git push
