@@ -61,4 +61,14 @@ streamlit run app.py
 
 ## 更新資料
 
-若要更新最新資料，請至 [勞動部公告系統](https://announcement.mol.gov.tw/) 下載 CSV，取代 `data/labor_violations.csv` 即可。
+### 方式一：本地更新腳本
+```bash
+python update_data.py
+```
+執行後會自動從勞動部下載最新裁罰資料，取代 `data/labor_violations.csv`。約需 30-60 秒。
+
+### 方式二：手動更新
+1. 前往 [勞動部公告系統](https://announcement.mol.gov.tw/)
+2. 選擇「縣市」與「法規：勞動基準法」
+3. 下載格式選 **CSV**，點下載
+4. 將 CSV 檔案取代 `data/labor_violations.csv` 即完成更新
