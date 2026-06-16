@@ -1,94 +1,121 @@
 import streamlit as st
 import pandas as pd
-import datetime
+import os
 
 st.set_page_config(page_title="違反勞基法查詢", page_icon="⚖️", layout="wide")
 
-# ===== MOCK DATA =====
-VIOLATIONS = [
-    {"公司名稱": "大新建設股份有限公司", "縣市": "台北市", "違反法條": "第24條", "違反內容": "延長工作時間未依規定加給工資", "裁罰日期": "2024-01-15", "裁罰金額": "30萬"},
-    {"公司名稱": "長榮清潔有限公司", "縣市": "新北市", "違反法條": "第30條", "違反內容": "正常工作時間超過法定標準", "裁罰日期": "2024-02-03", "裁罰金額": "22萬"},
-    {"公司名稱": "宏碁保全股份有限公司", "縣市": "桃園市", "違反法條": "第32條", "違反內容": "延長工時超過法令上限", "裁罰日期": "2024-02-20", "裁罰金額": "35萬"},
-    {"公司名稱": "金龍餐飲股份有限公司", "縣市": "台中市", "違反法條": "第24條", "違反內容": "假日工作未加倍發給工資", "裁罰日期": "2024-03-05", "裁罰金額": "18萬"},
-    {"公司名稱": "信義房屋股份有限公司", "縣市": "台北市", "違反法條": "第38條", "違反內容": "特休假的折算工資未於終止契約時給付", "裁罰日期": "2024-03-12", "裁罰金額": "25萬"},
-    {"公司名稱": "遠傳電信股份有限公司", "縣市": "新北市", "違反法條": "第30條", "違反內容": "出勤紀錄未逐日記載至分鐘", "裁罰日期": "2024-03-18", "裁罰金額": "12萬"},
-    {"公司名稱": "王品餐飲股份有限公司", "縣市": "台南市", "違反法條": "第24條", "違反內容": "國定假日工作未給予加倍工資", "裁罰日期": "2024-04-02", "裁罰金額": "20萬"},
-    {"公司名稱": "鼎新電子股份有限公司", "縣市": "高雄市", "違反法條": "第39條", "違反內容": "員工請假未依法令規定核給", "裁罰日期": "2024-04-10", "裁罰金額": "15萬"},
-    {"公司名稱": "富邦媒體科技股份有限公司", "縣市": "台北市", "違反法條": "第32條", "違反內容": "單日延長工時超過12小時", "裁罰日期": "2024-04-22", "裁罰金額": "40萬"},
-    {"公司名稱": "黑橋牌食品股份有限公司", "縣市": "台南市", "違反法條": "第30-1條", "違反內容": "輪班制未依規定給予充分休息", "裁罰日期": "2024-05-03", "裁罰金額": "28萬"},
-    {"公司名稱": "聯發電子股份有限公司", "縣市": "新竹縣", "違反法條": "第38條", "違反內容": "特休假的折算工資未於終止契約時給付", "裁罰日期": "2024-05-14", "裁罰金額": "32萬"},
-    {"公司名稱": "新光保全股份有限公司", "縣市": "台北市", "違反法條": "第24條", "違反內容": "延長工作時間未依規定加給工資", "裁罰日期": "2024-05-25", "裁罰金額": "27萬"},
-    {"公司名稱": "全家便利商店股份有限公司", "縣市": "新北市", "違反法條": "第30條", "違反內容": "出勤紀錄未逐日記載至分鐘", "裁罰日期": "2024-06-01", "裁罰金額": "14萬"},
-    {"公司名稱": "味全食品股份有限公司", "縣市": "桃園市", "違反法條": "第39條", "違反內容": "員工請假未依法令規定核給", "裁罰日期": "2024-06-08", "裁罰金額": "16萬"},
-    {"公司名稱": "巨大機械工業股份有限公司", "縣市": "台中市", "違反法條": "第24條", "違反內容": "國定假日工作未給予加倍工資", "裁罰日期": "2024-06-15", "裁罰金額": "33萬"},
-]
+DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "labor_violations.csv")
 
-CITIES = sorted(list(set([v["縣市"] for v in VIOLATIONS])))
-ARTICLES = sorted(list(set([v["違反法條"] for v in VIOLATIONS])))
+@st.cache_data(ttl=3600)
+def load_data():
+    df = pd.read_csv(
+        DATA_PATH,
+        encoding="utf-8-sig",
+        skiprows=1,  # 跳過第一行「違反雇主清冊」標題
+        dtype=str,
+    )
+    df.columns = [c.strip() for c in df.columns]
+    df = df.fillna("")
+    df["縣市"] = df["縣市／單位別"].str.split("／").str[0].str.strip()
+    df["罰鍰數字"] = (
+        df["罰鍰金額"]
+        .str.replace(",", "")
+        .str.replace(" ", "")
+        .str.extract(r"(\d+)", expand=False)
+    )
+    return df
+
+try:
+    df = load_data()
+    total = len(df)
+    CITIES = sorted(df["縣市"].unique().tolist())
+    LAW_ARTICLES = sorted(df["違反法規條款"].unique().tolist())
+except Exception as e:
+    st.error(f"無法讀取資料：{e}")
+    st.stop()
 
 # ===== UI =====
-st.title("⚖️ 違反勞動基準法公司查詢")
-st.caption("資料來源：勞動部職業安全衛生署｜Mock 示範版")
+st.title("⚖️ 違反勞動基準法裁罰查詢")
+st.caption(f"共 {total:,} 筆裁罰資料｜資料來源：勞動部")
 
-# ===== FILTERS =====
 with st.container():
     c1, c2, c3 = st.columns(3)
     with c1:
-        city_filter = st.selectbox("縣市", ["全部"] + CITIES)
+        city = st.selectbox("縣市", ["全部"] + CITIES)
     with c2:
-        article_filter = st.selectbox("違反法條", ["全部"] + ARTICLES)
+        article = st.selectbox("違反法條", ["全部"] + LAW_ARTICLES)
     with c3:
         keyword = st.text_input("公司名稱關鍵字", placeholder="輸入公司名稱...")
 
-# ===== FILTER DATA =====
-df = pd.DataFrame(VIOLATIONS)
-if city_filter != "全部":
-    df = df[df["縣市"] == city_filter]
-if article_filter != "全部":
-    df = df[df["違反法條"] == article_filter]
+filtered = df.copy()
+if city != "全部":
+    filtered = filtered[filtered["縣市"] == city]
+if article != "全部":
+    filtered = filtered[filtered["違反法規條款"] == article]
 if keyword:
-    df = df[df["公司名稱"].str.contains(keyword, na=False)]
+    col_name = "事業單位名稱(負責人)\n自然人姓名"
+    filtered = filtered[filtered[col_name].str.contains(keyword, na=False, regex=False)]
 
-# ===== RESULTS =====
 st.divider()
-st.markdown(f"### 查到 {len(df)} 筆結果")
+st.markdown(f"### 查到 {len(filtered):,} 筆結果")
 
-if len(df) == 0:
-    st.warning("沒有找到符合條件的資料，請調整篩選條件。")
-else:
-    for _, row in df.iterrows():
+PAGE_SIZE = 50
+pages = list(range(0, len(filtered), PAGE_SIZE))
+
+def render_page(df_page):
+    for _, row in df_page.iterrows():
+        co = row.get("事業單位名稱(負責人)\n自然人姓名", "").strip()
+        city_val = row.get("縣市", "").strip()
+        date = row.get("處分日期", "").strip()
+        law = row.get("違反法規條款", "").strip()
+        desc = row.get("法條敘述", "").strip()
+        fine = row.get("罰鍰金額", "").strip()
+        announce = row.get("公告日期", "").strip()
+
         with st.container():
             c1, c2, c3 = st.columns([3, 1, 1])
             with c1:
-                st.markdown(f"**🏢 {row['公司名稱']}**")
-                st.caption(f"📍 {row['縣市']}　📅 {row['裁罰日期']}")
+                st.markdown(f"**🏢 {co}**")
+                st.caption(f"📍 {city_val}　📅 處分：{date}　📣 公告：{announce}")
             with c2:
-                st.markdown(f"**{row['違反法條']}**")
-                st.caption("違反法條")
+                st.markdown(f"**{law}**")
+                st.caption("違反法規")
             with c3:
-                st.markdown(f"**{row['裁罰金額']}**")
+                st.markdown(f"**{fine}**")
                 st.caption("裁罰金額")
-            st.markdown(f"　{row['違反內容']}")
+            st.markdown(f"　{desc}")
             st.divider()
+
+if len(filtered) == 0:
+    st.warning("沒有找到符合條件的資料，請調整篩選條件。")
+else:
+    page_idx = st.number_input(
+        f"第幾頁（1~{len(pages)}）",
+        min_value=1,
+        max_value=max(1, len(pages)),
+        value=1,
+        step=1,
+    )
+    start = (page_idx - 1) * PAGE_SIZE
+    end = start + PAGE_SIZE
+    render_page(filtered.iloc[start:end])
 
 # ===== SIDEBAR =====
 with st.sidebar:
     st.markdown("### 📊 統計")
-    st.metric("總記錄數", len(VIOLATIONS))
-    st.metric("符合篩選", len(df))
+    st.metric("總記錄數", f"{total:,}")
+    st.metric("符合篩選", f"{len(filtered):,}")
     st.markdown("---")
     st.markdown("### 🔗 資料來源")
-    st.markdown("""
-    勞動部公告之違反勞動基準法裁處名單。
-    本版本為 Mock 資料，示範用。
-    """)
+    st.markdown("[勞動部公告系統](https://announcement.mol.gov.tw/)")
     st.markdown("---")
     st.markdown("### 📌 常見違反法條")
     st.markdown("""
-    - **第24條**：延長工時加給
-    - **第30條**：工作時間記錄
-    - **第32條**：延長工時上限
-    - **第38條**：特別休假
-    - **第39條**：請假規定
-    - **第30-1條**：輪班間隔
+    - **第24條**：延長工時未依規定加給工資
+    - **第30條**：工作時間記錄未逐日記載
+    - **第30-1條**：輪班制未給予充分休息
+    - **第32條**：延長工時超過上限
+    - **第38條**：特別休假未依法折算工資
+    - **第39條**：員工請假規定未核給
+    - **第22條**：工資未全額直接給付
     """)
