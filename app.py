@@ -154,16 +154,16 @@ except Exception as e:
 st.markdown('<div class="header-wrap">', unsafe_allow_html=True)
 ch1, ch2 = st.columns([1, 1])
 with ch1:
-    st.markdown('<div class="header-title">⚖️ 違反勞動基準法裁罰查詢</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-sub">Labor Standards Act Violations — 公開資料視覺化</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-title" style="font-family:\'Chakra Petch\',sans-serif;font-size:1.5rem;font-weight:700;color:#fff;letter-spacing:2px;">⚖️ 違反勞動基準法裁罰查詢</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-sub" style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-top:4px;">Labor Standards Act Violations — 公開資料視覺化</div>', unsafe_allow_html=True)
 with ch2:
     sc1, sc2, sc3 = st.columns(3)
     with sc1:
-        st.markdown(f'<div class="stat-num">{total:,}</div><div class="stat-label">裁罰總筆數</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#fff;">{total:,}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:1px;">裁罰總筆數</div>', unsafe_allow_html=True)
     with sc2:
-        st.markdown(f'<div class="stat-num">{len(CITIES)}</div><div class="stat-label">涵蓋縣市</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#fff;">{len(CITIES)}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:1px;">涵蓋縣市</div>', unsafe_allow_html=True)
     with sc3:
-        st.markdown(f'<div class="stat-num">{len(LAW_ARTICLES)}</div><div class="stat-label">違反法條</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#fff;">{len(LAW_ARTICLES)}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:1px;">違反法條</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ===== FILTER =====
