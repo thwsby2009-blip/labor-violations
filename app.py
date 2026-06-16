@@ -24,8 +24,12 @@ def load_data():
 try:
     df = load_data()
     total = len(df)
-    CITIES = sorted(df["縣市"].unique().tolist())
-    LAW_ARTICLES = sorted(df["違反法規條款"].unique().tolist())
+    VALID_CITIES = ["台北市","新北市","基隆市","宜蘭縣","桃園市","新竹縣","新竹市",
+                    "苗栗縣","台中市","彰化縣","南投縣","雲林縣","嘉義縣","嘉義市",
+                    "台南市","高雄市","屏東縣","澎湖縣","花蓮縣","台東縣","金門縣","連江縣"]
+    # 只留明確是縣市名稱的
+    CITIES = sorted([c for c in df["縣市"].unique() if c in VALID_CITIES])
+    LAW_ARTICLES = sorted([a for a in df["違反法規條款"].unique() if a and "第" in a])
 except Exception as e:
     st.error(f"無法讀取資料：{e}")
     st.stop()
