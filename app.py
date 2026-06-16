@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="違反勞基法查詢", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="違反勞動基準法裁罰查詢", layout="wide")
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "labor_violations.csv")
 
