@@ -115,14 +115,14 @@ st.markdown("""
 .sidebar-law-text { font-size: 0.72rem; color: var(--muted); }
 
 /* Streamlit element overrides */
-.stTextInput input, .stSelectbox div {
-  border-color: var(--border) !important;
-  color: var(--text) !important;
-}
+.stApp, .stApp * { color: #1a1814 !important; }
+.stMarkdown, .stText, .stMarkdown p, .stMarkdown span { color: #1a1814 !important; }
+.stTextInput input, .stSelectbox div, .stTextInput input::placeholder { color: #1a1814 !important; }
 .stTextInput input:focus, .stSelectbox:focus-within {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 2px rgba(200,146,42,0.12) !important;
 }
+[data-testid="stApp"] [data-testid="stHeader"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
