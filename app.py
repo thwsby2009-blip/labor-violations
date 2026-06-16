@@ -8,21 +8,22 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "labor_violations.cs
 
 @st.cache_data(ttl=3600)
 def load_data():
+    col_names = [
+        "編號", "縣市／單位別", "公告日期",
+        "事業單位名稱(負責人)\n自然人姓名",
+        "處分日期", "處分字號",
+        "違反法規條款", "法條敘述", "罰鍰金額", "備註"
+    ]
     df = pd.read_csv(
         DATA_PATH,
         encoding="utf-8-sig",
-        skiprows=1,  # 跳過第一行「違反雇主清冊」標題
+        skiprows=2,       # 跳過第0行標題 + 第1行截斷header
+        header=None,
+        names=col_names,
         dtype=str,
     )
-    df.columns = [c.strip() for c in df.columns]
     df = df.fillna("")
     df["縣市"] = df["縣市／單位別"].str.split("／").str[0].str.strip()
-    df["罰鍰數字"] = (
-        df["罰鍰金額"]
-        .str.replace(",", "")
-        .str.replace(" ", "")
-        .str.extract(r"(\d+)", expand=False)
-    )
     return df
 
 try:
