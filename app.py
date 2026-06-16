@@ -3,12 +3,8 @@ import pandas as pd
 import os
 
 st.set_page_config(page_title="違反勞動基準法裁罰查詢", layout="wide")
-st.title("⚖️ 違反勞動基準法裁罰查詢")
-st.caption(f"Labor Standards Act Violations — 公開資料視覺化")
 
-st.markdown(f"**裁罰總筆數** {total:,} 筆　**涵蓋縣市** {len(CITIES)} 個　**違反法條** {len(LAW_ARTICLES)} 種")
-
-st.divider()
+DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "labor_violations.csv")
 
 # ===== DATA =====
 @st.cache_data(ttl=3600)
@@ -35,33 +31,21 @@ except Exception as e:
     st.stop()
 
 # ===== HEADER =====
-st.markdown('<div class="header-wrap">', unsafe_allow_html=True)
-ch1, ch2 = st.columns([1, 1])
-with ch1:
-    st.markdown('<div class="header-title" style="font-family:\'Chakra Petch\',sans-serif;font-size:1.5rem;font-weight:700;color:#fff;letter-spacing:2px;">⚖️ 違反勞動基準法裁罰查詢</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-sub" style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-top:4px;">Labor Standards Act Violations — 公開資料視覺化</div>', unsafe_allow_html=True)
-with ch2:
-    sc1, sc2, sc3 = st.columns(3)
-    with sc1:
-        st.markdown(f'<div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#fff;">{total:,}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:1px;">裁罰總筆數</div>', unsafe_allow_html=True)
-    with sc2:
-        st.markdown(f'<div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#fff;">{len(CITIES)}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:1px;">涵蓋縣市</div>', unsafe_allow_html=True)
-    with sc3:
-        st.markdown(f'<div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#fff;">{len(LAW_ARTICLES)}</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.4);letter-spacing:1px;text-transform:uppercase;margin-top:1px;">違反法條</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+st.title("⚖️ 違反勞動基準法裁罰查詢")
+st.caption(f"Labor Standards Act Violations — 公開資料視覺化")
+st.markdown(f"**裁罰總筆數** {total:,} 筆　**涵蓋縣市** {len(CITIES)} 個　**違反法條** {len(LAW_ARTICLES)} 種")
+st.divider()
 
 # ===== FILTER =====
-st.markdown('<div class="filter-bar">', unsafe_allow_html=True)
 c1, c2, c3 = st.columns([1, 1, 1.5])
 with c1:
-    city = st.selectbox("縣市", ["全部"] + CITIES, label_visibility="collapsed")
+    city = st.selectbox("縣市", ["全部"] + CITIES)
 with c2:
-    article = st.selectbox("違反法條", ["全部"] + LAW_ARTICLES, label_visibility="collapsed")
+    article = st.selectbox("違反法條", ["全部"] + LAW_ARTICLES)
 with c3:
-    keyword = st.text_input("公司名稱關鍵字", placeholder="輸入公司名稱或負責人...", label_visibility="collapsed")
-st.markdown('</div>', unsafe_allow_html=True)
+    keyword = st.text_input("公司名稱關鍵字", placeholder="輸入公司名稱或負責人...")
 
-# ===== FILTER =====
+# ===== FILTER DATA =====
 filtered = df.copy()
 if city != "全部":
     filtered = filtered[filtered["縣市"] == city]
@@ -70,7 +54,7 @@ if article != "全部":
 if keyword:
     filtered = filtered[filtered["事業單位名稱(負責人)\n自然人姓名"].str.contains(keyword, na=False, regex=False)]
 
-st.markdown(f"**查到 {len(filtered):,} 筆結果，共 {total:,} 筆**", unsafe_allow_html=False)
+st.markdown(f"**查到 {len(filtered):,} 筆結果，共 {total:,} 筆資料**")
 
 PAGE_SIZE = 30
 pages = list(range(0, len(filtered), PAGE_SIZE))
@@ -87,18 +71,16 @@ def render_page(df_page):
         unit = row["縣市／單位別"].strip()
 
         with st.container():
-            # Row: company + badges
-            col_left, col_right = st.columns([4, 1])
-            with col_left:
+            cl, cr = st.columns([4, 1])
+            with cl:
                 st.markdown(f"**🏢 {co}**")
                 st.caption(f"📍 {unit}　📅 處分：{date}　📣 公告：{ann}")
-            with col_right:
-                st.markdown(f'<div class="record-badges">', unsafe_allow_html=True)
-                st.markdown(f'<span class="badge-law">{law}</span>', unsafe_allow_html=True)
+            with cr:
+                if law:
+                    st.markdown(f":orange[{law}]")
                 if fine:
-                    st.markdown(f'<span class="badge-fine">{fine}</span>', unsafe_allow_html=True)
-                st.markdown(f'</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="record-desc">▸ {desc}</div>', unsafe_allow_html=True)
+                    st.markdown(f":red[**{fine}**]")
+            st.markdown(f"{desc}")
         st.divider()
 
 if len(filtered) == 0:
@@ -113,20 +95,15 @@ else:
 
 # ===== SIDEBAR =====
 with st.sidebar:
-    st.markdown('<div class="sidebar-card">', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-title">📊 統計概覽</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="sidebar-row"><span>裁罰總筆數</span><span class="sidebar-val">{total:,}</span></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="sidebar-row"><span>符合篩選</span><span class="sidebar-val">{len(filtered):,}</span></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="sidebar-row"><span>涵蓋縣市</span><span class="sidebar-val">{len(CITIES)}</span></div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="sidebar-card">', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-title">🔗 資料來源</div>', unsafe_allow_html=True)
-    st.markdown('[➡️ 勞動部公告系統](https://announcement.mol.gov.tw/)')
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="sidebar-card">', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-title">📌 常見違反法條</div>', unsafe_allow_html=True)
+    st.markdown("### 📊 統計概覽")
+    st.markdown(f"裁罰總筆數 **{total:,}** 筆")
+    st.markdown(f"符合篩選 **{len(filtered):,}** 筆")
+    st.markdown(f"涵蓋縣市 **{len(CITIES)}** 個")
+    st.divider()
+    st.markdown("### 🔗 資料來源")
+    st.markdown("[➡️ 勞動部公告系統](https://announcement.mol.gov.tw/)")
+    st.divider()
+    st.markdown("### 📌 常見違反法條")
     laws = [
         ("第24條", "延長工時未依規定加給工資"),
         ("第30條", "工時未逐日記載"),
@@ -137,5 +114,4 @@ with st.sidebar:
         ("第22條", "工資未全額直接給付"),
     ]
     for num, text in laws:
-        st.markdown(f'<div class="sidebar-law"><span class="sidebar-law-num">{num}</span><span class="sidebar-law-text">{text}</span></div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f"**{num}** {text}")
