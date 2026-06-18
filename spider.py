@@ -6,10 +6,15 @@
 用法：
   python update_data.py
 """
-import os, sys, zipfile, io, re
+import os, sys, zipfile, io, re, ssl
 import urllib.request
 import urllib.parse
 import pandas as pd
+
+# 針對勞動部舊版 SSL 的降級處理
+SSL_ctx = ssl.create_default_context()
+SSL_ctx.check_hostname = False
+SSL_ctx.verify_mode = ssl.CERT_NONE
 
 BASE_URL = "https://announcement.mol.gov.tw/Download/"
 FIELDS = {
@@ -31,7 +36,7 @@ def fetch() -> pd.DataFrame:
     req.add_header("Referer", "https://announcement.mol.gov.tw/")
 
     print("正在下載最新資料（約 8 萬筆），請稍候...")
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=120, context=SSL_ctx) as resp:
         raw = resp.read()
 
     print(f"下載完成，檔案大小：{len(raw):,} bytes")
