@@ -41,21 +41,11 @@ def fetch() -> pd.DataFrame:
 
     print(f"下載完成，檔案大小：{len(raw):,} bytes")
 
-    # 解 ZIP，取最大的 CSV
-    with zipfile.ZipFile(io.BytesIO(raw)) as z:
-        csv_files = [f for f in z.namelist() if f.endswith(".csv")]
-        print(f"ZIP 內含 {len(csv_files)} 個 CSV 檔：{csv_files}")
-        # 合併所有 CSV
-        dfs = []
-        for fname in csv_files:
-            with z.open(fname) as f:
-                df = pd.read_csv(f, encoding="utf-8-sig", skiprows=1, dtype=str)
-                dfs.append(df)
-        combined = pd.concat(dfs, ignore_index=True)
-
-    # 去除全空白列
-    combined = combined.dropna(how="all")
-    return combined
+    # CSV 直接解碼（伺服器直接回傳 CSV，不再是 ZIP）
+    from io import StringIO
+    text = raw.decode("utf-8-sig", errors="replace")
+    df = pd.read_csv(StringIO(text), dtype=str, skiprows=1)
+    return df
 
 def urlencode(params: dict) -> str:
     return "&".join(f"{k}={urllib.parse.quote(str(v))}" for k, v in params.items())
