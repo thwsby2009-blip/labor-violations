@@ -13,23 +13,21 @@ def load_data():
     rows = []
     with open(DATA_PATH, encoding='utf-8-sig') as f:
         reader = csvlib.reader(f)
-        next(reader)  # 跳過「違反雇主清冊」標題
-        next(reader)  # 跳過欄位名稱列（可能有換行問題）
+        next(reader)  # 跳過標題列（違反雇主清冊）
         for row in reader:
             if len(row) >= 9:
                 rows.append({
-                    "縣市": row[1].strip(),
-                    "縣市完整": row[1].strip(),
-                    "公告日期": row[2].strip(),
-                    "事業單位": row[3].strip(),
-                    "處分日期": row[4].strip(),
-                    "處分字號": row[5].strip(),
+                    "縣市": row[0].strip(),
+                    "縣市完整": row[0].strip(),
+                    "公告日期": row[1].strip(),
+                    "事業單位": row[2].strip(),
+                    "處分日期": row[3].strip(),
+                    "處分字號": row[4].strip(),
                     "違反法規": row[6].strip(),
                     "法條敘述": row[7].strip(),
                     "罰鍰金額": row[8].strip(),
                 })
     df = pd.DataFrame(rows)
-    df = df.fillna("")
     return df
 
 try:
