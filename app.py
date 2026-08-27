@@ -7,7 +7,6 @@ st.set_page_config(page_title="違反勞動基準法裁罰查詢", layout="wide"
 DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "labor_violations.csv")
 
 # ===== DATA =====
-@st.cache_data(ttl=3600)
 def load_data():
     import csv as csvlib
     rows = []
@@ -24,9 +23,9 @@ def load_data():
                     "事業單位": row[2].strip(),
                     "處分日期": row[3].strip(),
                     "處分字號": row[4].strip(),
-                    "違反法規": row[6].strip(),
-                    "法條敘述": row[7].strip(),
-                    "罰鍰金額": row[8].strip(),
+                    "違反法規": row[5].strip(),
+                    "法條敘述": row[6].strip(),
+                    "罰鍰金額": row[7].strip(),
                     # 原始資料保留（避免勞動部改格式時欄位錯位）
                     "_raw_編號": row[0].strip(),
                     "_raw_公告日期": row[1].strip(),
@@ -39,6 +38,22 @@ def load_data():
                     "_raw_備註": row[8].strip(),
                 })
     df = pd.DataFrame(rows)
+    # 將民國年公告日期轉換為西元年格式並降序排序 (最新在最前)
+    try:
+        def roc_to_ad(date_str):
+            if not date_str or not isinstance(date_str, str): return pd.NaT
+            parts = date_str.split('/')
+            if len(parts) == 3:
+                try:
+                    # 民國年 + 1911 = 西元年
+                    return pd.Timestamp(year=int(parts[0]) + 1911, month=int(parts[1]), day=int(parts[2]))
+                except ValueError: return pd.NaT
+            return pd.NaT
+
+        df['公告日期_dt'] = df['公告日期'].apply(roc_to_ad)
+        df = df.sort_values('公告日期_dt', ascending=False).drop(columns=['公告日期_dt'])
+    except Exception:
+        pass
     return df
 
 try:
