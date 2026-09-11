@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勞基法裁罰查詢 | Labor Standards Act Data Viz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Hero Section -->
+    <section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
+        <div class="absolute top-0 left-0 w-full h-full opacity-5">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                <path fill="#1e293b" d="M44.7,-76.4C58.1,-69.2,69.2,-58.1,76.4,-44.7C83.6,-31.3,86.9,-15.7,85.3,-0.9C83.7,13.8,77.2,27.7,68.5,40.1C59.8,52.5,48.9,63.4,35.6,71.4C22.3,79.4,6.6,84.4,-10.1,82.3C-26.8,80.2,-44.5,71.1,-58,58.6C-71.5,46.1,-80.8,30.2,-83.4,13.1C-86,-3.9,-81.9,-22.1,-73.6,-37.6C-65.3,-53.1,-52.8,-65.9,-38.4,-73.2C-24,-80.5,-7.6,-82.3,9.4,-80.2C26.4,-78.1,44.7,-76.4,44.7,-76.4Z" transform="translate(100 100)" />
+            </svg>
+        </div>
+
+        <div class="container mx-auto px-6 relative z-10 text-center">
+            <div class="inline-block px-4 py-1.5 mb-6 text-sm font-semibold tracking-wide text-slate-600 uppercase bg-slate-100 rounded-full">
+                Civic Tech & Data Visualization
+            </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                <span class="gradient-text">勞基法裁罰公開查詢</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+                將碎片化的政府公告轉化為透明、可搜尋的企業信用索引。透過自動化數據管線，讓勞工能快速核對企業合規狀況。
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="https://labor-violations-vd3ywxclaubcxqtozzh6gf.streamlit.app/" target="_blank" class="px-8 py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i> 立即查詢裁罰紀錄
+                </a>
+                <a href="https://github.com/thwsby2009-blip/labor-violations" target="_blank" class="px-8 py-4 bg-white text-slate-700 font-bold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fa-brands fa-github"></i> 查看技術實作
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Impact Section -->
+    <section class="py-24 bg-slate-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">解決什麼問題？</h2>
+                <div class="h-1 w-20 bg-slate-800 mx-auto rounded-full"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold">1</div>
+                        <div>
+                            <h4 class="font-bold text-lg">打破資訊壁壘</h4>
+                            <p class="text-slate-600">原先的裁罰紀錄分散在各縣市政府的 PDF 檔案中，搜尋極其困難。</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold">2</div>
+                        <div>
+                            <h4 class="font-bold text-lg">秒級精準檢索</h4>
+                            <p class="text-slate-600">透過結構化資料庫，使用者可透過「公司名稱」、「縣市」、「法條」進行交叉篩選。</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">3</div>
+                        <div>
+                            <h4 class="font-bold text-lg">數據透明化</h4>
+                            <p class="text-slate-600">將 8 萬筆數據視覺化，讓勞基法裁罰紀錄真正成為可利用的公共資訊。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
+                    <div class="text-center mb-6">
+                        <span class="text-4xl font-bold text-slate-800">80,000+</span>
+                        <p class="text-slate-500">收錄真實裁罰筆數</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                            <span class="text-slate-600">數據來源</span>
+                            <span class="font-semibold">勞動部公告系統</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                            <span class="text-slate-600">更新頻率</span>
+                            <span class="font-semibold">每週自動更新</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                            <span class="text-slate-600">核心功能</span>
+                            <span class="font-semibold">多維度篩選 / 關鍵字搜尋</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Implementation -->
+    <section class="py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-12 text-center">技術實作流程</h2>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="relative p-6 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                        <div class="text-3xl mb-4 text-slate-400"><i class="fa-solid fa-spider"></i></div>
+                        <h4 class="font-bold mb-2">數據採集</h4>
+                        <p class="text-sm text-slate-600">開發自動化爬蟲腳本，定期抓取政府公開 CSV/PDF 資料。</p>
+                    </div>
+                    <div class="relative p-6 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                        <div class="text-3xl mb-4 text-slate-400"><i class="fa-solid fa-filter"></i></div>
+                        <h4 class="font-bold mb-2">清洗與結構化</h4>
+                        <p class="text-sm text-slate-600">處理民國年轉西元、去重及欄位對齊，儲存為結構化 CSV。</p>
+                    </div>
+                    <div class="relative p-6 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                        <div class="text-3xl mb-4 text-slate-400"><i class="fa-solid fa-display"></i></div>
+                        <h4 class="font-bold mb-2">前端視覺化</h4>
+                        <p class="text-sm text-slate-600">使用 Streamlit 快速建構高效查詢介面，實現即時過濾。</p>
+                    </div>
+                </div>
+                
+                <div class="mt-16 p-8 bg-slate-900 rounded-3xl text-white shadow-2xl">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                        <div class="p-4 bg-slate-800 rounded-xl">
+                            <div class="text-xs text-slate-400 mb-1">Language</div>
+                            <div class="font-bold text-white">Python</div>
+                        </div>
+                        <div class="p-4 bg-slate-800 rounded-xl">
+                            <div class="text-xs text-slate-400 mb-1">Framework</div>
+                            <div class="font-bold text-white">Streamlit</div>
+                        </div>
+                        <div class="p-4 bg-slate-800 rounded-xl">
+                            <div class="text-xs text-slate-400 mb-1">Data Format</div>
+                            <div class="font-bold text-white">CSV</div>
+                        </div>
+                        <div class="p-4 bg-slate-800 rounded-xl">
+                            <div class="text-xs text-slate-400 mb-1">Deployment</div>
+                            <div class="font-bold text-white">Cloud</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-12 bg-slate-50 border-t border-slate-200">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-slate-500 text-sm">
+                &copy; 2026 Created by Harry Tsai. Data Source: Ministry of Labor.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>
