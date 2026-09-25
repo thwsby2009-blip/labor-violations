@@ -1,152 +1,154 @@
-import streamlit as st
+from datetime import datetime
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import altair as alt
 import pandas as pd
-import os
+import streamlit as st
 
-st.set_page_config(page_title="違反勞動基準法裁罰查詢", layout="wide")
+from dashboard_data import CITIES, load_cases
 
-DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "labor_violations.csv")
+st.set_page_config(page_title='勞基法裁罰數據總覽', page_icon='⚖️', layout='wide')
+st.markdown('''<style>
+.stApp {background: #f6f8fc;}
+.block-container {max-width: 1440px; padding-top: 2.5rem;}
+[data-testid="stMetric"] {background: white; border: 1px solid #e3e9f2;
+border-radius: 16px; padding: 20px;}
+[data-testid="stMetricLabel"] {color: #52627a;}
+h1,h2,h3 {color: #172b4d;}
+</style>''', unsafe_allow_html=True)
+DATA_PATH = Path(__file__).parent / 'data' / 'labor_violations.csv'
 
-# ===== DATA =====
-def load_data():
-    import csv as csvlib
-    rows = []
-    with open(DATA_PATH, encoding='utf-8-sig') as f:
-        reader = csvlib.reader(f)
-        next(reader)  # 跳過標題列（違反雇主清冊）
-        for row in reader:
-            if len(row) >= 9:
-                rows.append({
-                    # 應用程式使用欄位（固定對應）
-                    "縣市": row[0].strip(),
-                    "縣市完整": row[0].strip(),
-                    "公告日期": row[1].strip(),
-                    "事業單位": row[2].strip(),
-                    "處分日期": row[3].strip(),
-                    "處分字號": row[4].strip(),
-                    "違反法規": row[5].strip(),
-                    "法條敘述": row[6].strip(),
-                    "罰鍰金額": row[7].strip(),
-                    # 原始資料保留（避免勞動部改格式時欄位錯位）
-                    "_raw_編號": row[0].strip(),
-                    "_raw_公告日期": row[1].strip(),
-                    "_raw_事業單位": row[2].strip(),
-                    "_raw_處分日期": row[3].strip(),
-                    "_raw_處分字號": row[4].strip(),
-                    "_raw_違反法規": row[5].strip(),
-                    "_raw_法條敘述": row[6].strip(),
-                    "_raw_罰鍰金額": row[7].strip(),
-                    "_raw_備註": row[8].strip(),
-                })
-    df = pd.DataFrame(rows)
-    # 將民國年公告日期轉換為西元年格式並降序排序 (最新在最前)
-    try:
-        def roc_to_ad(date_str):
-            if not date_str or not isinstance(date_str, str): return pd.NaT
-            parts = date_str.split('/')
-            if len(parts) == 3:
-                try:
-                    # 民國年 + 1911 = 西元年
-                    return pd.Timestamp(year=int(parts[0]) + 1911, month=int(parts[1]), day=int(parts[2]))
-                except ValueError: return pd.NaT
-            return pd.NaT
 
-        df['公告日期_dt'] = df['公告日期'].apply(roc_to_ad)
-        df = df.sort_values('公告日期_dt', ascending=False).drop(columns=['公告日期_dt'])
-    except Exception:
-        pass
-    return df
+@st.cache_data
+def read_data(mtime):
+    records, info = load_cases(DATA_PATH)
+    frame = pd.DataFrame(records)
+    if frame.empty:
+        return frame, info
+    for column in ('處分日期', '公告日期'):
+        frame[column] = pd.to_datetime(frame[column])
+    return frame, info
+
 
 try:
-    df = load_data()
-    total = len(df)
-    CITIES = sorted(df["縣市"].unique().tolist())
-    LAW_ARTICLES = sorted(df["違反法規"].unique().tolist())
-except Exception as e:
-    st.error(f"無法讀取資料：{e}")
+    df, info = read_data(DATA_PATH.stat().st_mtime_ns)
+    if df.empty:
+        st.warning('目前沒有可讀取的裁罰資料。')
+        st.stop()
+except (OSError, ValueError) as error:
+    st.error(f'無法讀取資料：{error}')
     st.stop()
 
-# ===== HEADER =====
-st.title("⚖️ 違反勞動基準法裁罰查詢")
-st.caption(f"Labor Standards Act Violations — 公開資料視覺化")
-st.markdown(f"**裁罰總筆數** {total:,} 筆　**涵蓋縣市** {len(CITIES)} 個　**違反法條** {len(LAW_ARTICLES)} 種")
-st.divider()
+st.caption('TAIWAN LABOR DATA  /  公開裁罰資料')
+st.title('勞基法裁罰數據總覽')
+st.write('從年度變化、縣市分布到違規類型，了解已公開的裁罰紀錄。')
+latest = df['公告日期'].max()
+st.caption(f'資料內最新公告日期：{latest:%Y/%m/%d}' if pd.notna(latest) else '資料內最新公告日期：未提供')
 
-# ===== FILTER =====
-c1, c2, c3 = st.columns([1, 1, 1.5])
-with c1:
-    city = st.selectbox("縣市", ["全部"] + CITIES)
-with c2:
-    article = st.selectbox("違反法條", ["全部"] + LAW_ARTICLES)
-with c3:
-    keyword = st.text_input("公司名稱關鍵字", placeholder="輸入公司名稱或負責人...")
+years = sorted(df['處分年度'].dropna().astype(int).unique(), reverse=True)
+units = sorted(df['單位'].unique())
+c1, c2, c3, c4 = st.columns([1, 1.3, 1, 1.7])
+year = c1.selectbox('處分年度', ['全部年度'] + [str(y) for y in years])
+unit = c2.selectbox('縣市／公告單位', ['全部'] + units)
+law_options = sorted({v for values in df['條款'] for v in values})
+law = c3.selectbox('違反法條', ['全部'] + law_options)
+keyword = c4.text_input('公司／負責人', placeholder='輸入名稱搜尋')
 
-# ===== FILTER DATA =====
-filtered = df.copy()
-if city != "全部":
-    filtered = filtered[filtered["縣市"] == city]
-if article != "全部":
-    filtered = filtered[filtered["違反法規"] == article]
-if keyword:
-    filtered = filtered[filtered["事業單位"].str.contains(keyword, na=False, regex=False)]
+base = df.copy()
+if unit != '全部':
+    base = base[base['單位'] == unit]
+if law != '全部':
+    base = base[base['條款'].map(lambda values: law in values)]
+if keyword.strip():
+    base = base[base['事業單位'].str.contains(keyword.strip(), regex=False, na=False)]
+filtered = base if year == '全部年度' else base[base['處分年度'] == int(year)]
 
-st.markdown(f"**查到 {len(filtered):,} 筆結果，共 {total:,} 筆資料**")
+m1, m2, m3 = st.columns(3)
+m1.metric('裁罰案件數', f'{len(filtered):,}', help='同一公告單位、同一處分字號合併為一件；無字號時僅合併相同紀錄。')
+m2.metric('受裁罰事業單位（依公告名稱）', f'{filtered["事業單位"].nunique():,}', help='目前沒有統編，以完整公告名稱（含負責人）區分，不能視為精確的公司家數。')
+m3.metric('已提供罰鍰總額', f'NT$ {filtered["罰鍰金額"].sum():,.0f}')
+missing_amount = int(filtered['罰鍰金額'].isna().sum())
+st.caption(f'金額未提供或不一致：{missing_amount:,} 件，未列入金額加總。裁罰件數反映已收錄紀錄，不代表實際違規率。')
+today = datetime.now(ZoneInfo('Asia/Taipei')).date()
+if year == str(today.year) or (year == '全部年度' and today.year in years):
+    st.info(f'{today.year} 年尚未結束，資料也可能延後公告；不宜直接與完整年度比較。')
 
-PAGE_SIZE = 30
-pages = list(range(0, len(filtered), PAGE_SIZE))
-
-def render_page(df_page):
-    for _, row in df_page.iterrows():
-        co   = row["事業單位"].strip()
-        city = row["縣市"].strip()
-        date = row["處分日期"].strip()
-        law  = row["違反法規"].strip()
-        desc = row["法條敘述"].strip().replace(";", "；")
-        fine = row["罰鍰金額"].strip()
-        ann  = row["公告日期"].strip()
-        unit = row["縣市完整"].strip()
-
-        with st.container():
-            cl, cr = st.columns([4, 1])
-            with cl:
-                st.markdown(f"**🏢 {co}**")
-                st.caption(f"📍 {unit}　📅 處分：{date}　📣 公告：{ann}")
-            with cr:
-                if law:
-                    st.markdown(f":orange[{law}]")
-                if fine:
-                    st.markdown(f":red[**{fine}**]")
-            st.markdown(f"{desc}")
-        st.divider()
-
-if len(filtered) == 0:
-    st.warning("沒有找到符合條件的資料，請調整篩選條件。")
+st.subheader('歷年裁罰案件')
+st.caption('依處分年度歸類，補登舊案歸回原年度。此圖保留所有年度，套用縣市、法條及名稱篩選。')
+annual = base.dropna(subset=['處分年度']).groupby('處分年度').size().reset_index(name='案件數')
+if not annual.empty:
+    annual['年度'] = annual['處分年度'].astype(int).astype(str)
+    annual['選取'] = annual['年度'].eq(year) if year != '全部年度' else True
+    chart = alt.Chart(annual).mark_bar(cornerRadiusTopLeft=5, cornerRadiusTopRight=5).encode(
+        x=alt.X('年度:O', title='處分年度', axis=alt.Axis(labelAngle=0)),
+        y=alt.Y('案件數:Q', title='裁罰案件數'),
+        color=alt.condition(alt.datum['選取'], alt.value('#3975db'), alt.value('#c8d8f1')),
+        tooltip=['年度:O', alt.Tooltip('案件數:Q', format=',')]).properties(height=270)
+    st.altair_chart(chart, width='stretch')
 else:
-    page_idx = st.number_input(f"第幾頁（1~{len(pages)}）",
-        min_value=1, max_value=max(1, len(pages)), value=1, step=1,
-        label_visibility="collapsed")
-    start = (page_idx - 1) * PAGE_SIZE
-    end = start + PAGE_SIZE
-    render_page(filtered.iloc[start:end])
+    st.info('目前條件沒有可繪製的年度資料。')
+unknown_dates = int(base['處分年度'].isna().sum())
+if unknown_dates:
+    st.caption(f'另有 {unknown_dates:,} 件處分日期缺漏或不一致，未納入年度圖；可於全部年度的明細查看。')
 
-# ===== SIDEBAR =====
-with st.sidebar:
-    st.markdown("### 📊 統計概覽")
-    st.markdown(f"裁罰總筆數 **{total:,}** 筆")
-    st.markdown(f"符合篩選 **{len(filtered):,}** 筆")
-    st.markdown(f"涵蓋縣市 **{len(CITIES)}** 個")
-    st.divider()
-    st.markdown("### 🔗 資料來源")
-    st.markdown("[➡️ 勞動部公告系統](https://announcement.mol.gov.tw/)")
-    st.divider()
-    st.markdown("### 📌 常見違反法條")
-    laws = [
-        ("第24條", "延長工時未依規定加給工資"),
-        ("第30條", "工時未逐日記載"),
-        ("第30-1條", "輪班制未給予充分休息"),
-        ("第32條", "延長工時超過上限"),
-        ("第38條", "特別休假未依法折算"),
-        ("第39條", "員工請假規定未核給"),
-        ("第22條", "工資未全額直接給付"),
-    ]
-    for num, text in laws:
-        st.markdown(f"**{num}** {text}")
+left, right = st.columns([1.2, 1])
+with left:
+    st.subheader('縣市裁罰案件排名')
+    st.caption('依公告單位分組；不等同公司所在地。僅列出有收錄案件的縣市。')
+    city_rows = filtered[filtered['單位'].isin(CITIES)]
+    ranking = city_rows.groupby('單位').size().reset_index(name='案件數')
+    if ranking.empty:
+        st.info('目前條件沒有縣市案件。')
+    else:
+        st.altair_chart(alt.Chart(ranking).mark_bar(cornerRadiusEnd=4, color='#3975db').encode(
+            y=alt.Y('單位:N', sort='-x', title=None),
+            x=alt.X('案件數:Q', title='裁罰案件數'),
+            tooltip=['單位:N', alt.Tooltip('案件數:Q', format=',')]
+        ).properties(height=max(240, len(ranking) * 25)), width='stretch')
+    others = filtered[~filtered['單位'].isin(CITIES)]
+    if not others.empty:
+        with st.expander(f'其他公告機關 · {len(others):,} 件（未列入縣市排名）'):
+            st.dataframe(others.groupby('單位').size().reset_index(name='案件數'), hide_index=True, width='stretch')
+
+with right:
+    st.subheader('違規類型占比')
+    st.caption('依法條分類；同一案件的同一條計一次。一案可能涉及多條，占比以法條出現次數計算。')
+    counts = filtered.explode('條款').groupby('條款').size().sort_values(ascending=False)
+    if counts.empty:
+        st.info('目前條件沒有違規類型資料。')
+    else:
+        top = counts.head(5).copy()
+        if len(counts) > 5:
+            top.loc['其他'] = counts.iloc[5:].sum()
+        pie = top.rename_axis('違規類型').reset_index(name='出現次數')
+        pie['占比'] = pie['出現次數'] / pie['出現次數'].sum()
+        st.altair_chart(alt.Chart(pie).mark_arc(innerRadius=75, outerRadius=125, padAngle=0.025).encode(
+            theta=alt.Theta('出現次數:Q'), color=alt.Color('違規類型:N', scale=alt.Scale(scheme='tableau10'), legend=alt.Legend(orient='bottom')),
+            tooltip=['違規類型:N', alt.Tooltip('出現次數:Q', format=','), alt.Tooltip('占比:Q', format='.1%')]
+        ).properties(height=310), width='stretch')
+        st.dataframe(pie, hide_index=True, width='stretch',
+                     column_config={'占比': st.column_config.NumberColumn(format='percent')})
+
+st.subheader('裁罰明細')
+st.caption(f'符合目前篩選：{len(filtered):,} 件。可在表格欄名排序，或下載完整篩選結果。')
+columns = ['單位', '事業單位', '處分日期', '公告日期', '處分字號', '違反法規', '法條敘述', '罰鍰金額', '金額狀態', '備註']
+details = filtered.sort_values('處分日期', ascending=False)[columns].copy()
+for column in ('處分日期', '公告日期'):
+    details[column] = details[column].dt.strftime('%Y/%m/%d').fillna('未提供／不一致')
+if details.empty:
+    st.info('沒有符合條件的案件，請調整篩選。')
+else:
+    st.dataframe(details, hide_index=True, width='stretch', height=430,
+                 column_config={'罰鍰金額': st.column_config.NumberColumn(format='NT$ %.0f')})
+    st.download_button('下載篩選結果 CSV', details.to_csv(index=False).encode('utf-8-sig'),
+                       file_name='labor_violations_filtered.csv', mime='text/csv')
+
+with st.expander('資料來源與統計方式'):
+    st.markdown('[勞動部公告系統](https://announcement.mol.gov.tw/) · 每日更新排程；實際收錄以目前資料檔為準。')
+    st.write(f'原始資料 {info["原始列數"]:,} 列，合併重複處分列 {info["合併列數"]:,} 列。')
+    st.write('不同法條不重複計為多件處分。相同處分的金額若不一致，不列入金額總額，請查核明細及原公告。備註可能記載撤銷或更正，統計為收錄紀錄，並非有效處分的法律認定。')
+    st.write('未收錄不代表零違規；沒有依縣市企業數或勞檢次數調整。無統編及地址資料，尚不能確認公司更名或同名負責人關聯。')
+    st.write('最新公告日期不等於最後同步時間，也不保證各縣市資料完整。')
+    if info['略過列數']:
+        st.warning(f'另有 {info["略過列數"]} 列格式不完整，未納入統計。')
