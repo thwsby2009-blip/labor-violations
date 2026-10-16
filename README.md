@@ -56,11 +56,11 @@ streamlit run app.py
 
 ## 更新資料
 
-### 方式一：本地更新腳本
+### 方式一：腳本更新（唯一管道）
 ```bash
-python update_data.py
+python spider.py
 ```
-執行後會自動從勞動部下載最新裁罰資料，取代 `data/labor_violations.csv`。約需 30-60 秒。
+執行後會自動從勞動部下載最新裁罰資料，通過格式驗證才會取代 `data/labor_violations.csv`。約需 30-60 秒。
 
 ### 方式二：手動更新
 1. 前往 [勞動部公告系統](https://announcement.mol.gov.tw/)

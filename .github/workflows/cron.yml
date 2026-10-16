@@ -2,13 +2,21 @@ name: 每日更新勞動裁罰資料
 
 on:
   schedule:
-    # 台北時間每天 04:00 執行 (UTC 20:00)
-    - cron: '0 20 * * *'
+    # 台北時間每天 03:23 執行（UTC 19:23），錯開 GitHub 排程整點高載，降低被跳過機率
+    - cron: '23 19 * * *'
   workflow_dispatch:  # 可以手動觸發
+
+permissions:
+  contents: write
+
+concurrency:
+  group: data-update
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -30,3 +38,29 @@ jobs:
           git add data/labor_violations.csv
           git diff --staged --quiet || git commit -m "自動更新裁罰資料 $(date +'%Y-%m-%d %H:%M')"
           git push
+
+      - name: Telegram 通知（失敗或資料過期）
+        if: always()
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          msg=""
+          if [ "${{ job.status }}" != "success" ]; then
+            msg="❌ labor-violations 每日更新失敗（${{ job.status }}），請查看 Actions 紀錄"
+          fi
+          last=$(git log -1 --format=%ct -- data/labor_violations.csv)
+          age=$(( ($(date +%s) - last) / 86400 ))
+          if [ "$age" -ge 8 ]; then
+            msg="${msg} ⚠️ 資料已 ${age} 天未更新，檢查排程是否被跳過"
+          fi
+          if [ -z "$msg" ]; then
+            echo "更新正常，無需通知"
+            exit 0
+          fi
+          if [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; then
+            echo "未設定 TG_BOT_TOKEN / TG_CHAT_ID secrets，略過通知：${msg}"
+          else
+            curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+              -d chat_id="${TG_CHAT_ID}" --data-urlencode text="${msg}" > /dev/null
+          fi
